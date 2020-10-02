@@ -1,0 +1,113 @@
+---
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-byte-order-marker
+      - id: check-docstring-first
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: pretty-format-json
+      - id: sort-simple-yaml
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 19.10b0
+    hooks:
+      - id: black
+  - repo: https://github.com/myint/docformatter
+    rev: v1.3.1
+    hooks:
+      - id: docformatter
+        args: [--in-place]
+  - repo: git@github.com:Yelp/detect-secrets
+    rev: v0.14.2
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: .*/tests/.*
+  - repo: https://github.com/prettier/prettier
+    rev: 2.1.0
+    hooks:
+      - id: prettier
+        stages: [commit]
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 2.1.4
+    hooks:
+      - id: forbid-binary
+      - id: markdownlint # Configure in .mdlrc
+      - id: shellcheck
+  - repo:
+      https://github.com/pryorda/dockerfilelint-precommit-hooks
+      # contender for dockerlint: https://github.com/petalmd/dockerfile-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: dockerfilelint
+        stages: [commit]
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v2.1.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.6.2
+    hooks:
+      - id: bandit
+        args: [--exclude, "tests"]
+        files: .py$
+  - repo: local
+    hooks:
+      - id: pytest_commit
+        name: pytest (all but sparksession tests)
+        additional_dependencies: [pytest]
+        stages: [commit]
+        language: system
+        entry: poetry run pytest -m "not sparksession" --suppress-no-test-exit-code
+        files: \.py$
+        pass_filenames: false
+        types: [python]
+      - id: pytest_on_push
+        name: pytest (all)
+        additional_dependencies: [pytest]
+        stages: [push]
+        language: system
+        entry: poetry run python -m pytest
+        files: \.py$
+        pass_filenames: false
+        types: [python]
+      - id: isort
+        name: lexicographically sort imports
+        additional_dependencies: [isort]
+        stages: [commit]
+        language: system
+        entry: poetry run python -m isort --apply
+        types: [python]
+      - id: shfmt
+        name: shfmt
+        minimum_pre_commit_version: 2.4.0
+        language: golang
+        additional_dependencies: [mvdan.cc/sh/v3/cmd/shfmt@v3.1.1]
+        entry: shfmt
+        args: [-w]
+        types: [shell]
+      - id: mypy-cache-clean
+        name: purge mypy cache
+        # (see mypy issue 7281)
+        stages: [commit]
+        language: system
+        entry: rm -rf .mypy_cache/
+        always_run: true
+        pass_filenames: false
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    # note: must follow mypy-cache-clean
+    rev: v0.782
+    hooks:
+      - id: mypy
+        additional_dependencies: [pyspark-stubs==3.0.*]
